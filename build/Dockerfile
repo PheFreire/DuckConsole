@@ -135,6 +135,12 @@ RUN git clone https://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugi
   ln -s $ZSH_CUSTOM/themes/spaceship-prompt/spaceship.zsh-theme $ZSH_CUSTOM/themes/spaceship.zsh-theme
 
 # ---------------------------
+# Setup do Poetry
+# ---------------------------
+
+RUN poetry self add poetry-plugin-shell
+
+# ---------------------------
 # Entrypoint
 # ---------------------------
 
