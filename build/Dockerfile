@@ -75,7 +75,7 @@ RUN pip install --no-cache-dir pyright
 # Setup do Neovim
 # ---------------------------
 
-RUN git clone https://github.com/PheFreire/My-NeoVim.git /home/$USERNAME/.config/nvim && \
+RUN git clone https://github.com/PheFreire/NeoDuckEditor.git /home/$USERNAME/.config/nvim && \
   chmod +x /home/$USERNAME/.config/nvim/setup.sh && \
   /home/$USERNAME/.config/nvim/setup.sh
 

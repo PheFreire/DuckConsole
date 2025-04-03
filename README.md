@@ -16,7 +16,7 @@ Feito para desenvolvedores que trabalham com **Python, Rust, TypeScript, Postgre
 ✅ Ambientes:
 
 - `Zsh` com `Oh My Zsh`
-- `Neovim` (configuração custom via [My-NeoVim](https://github.com/PheFreire/My-NeoVim))
+- `Neovim` (configuração custom via [NeoDuckEditor](https://github.com/PheFreire/NeoDuckEditor))
 - `tmux`, `fzf`, `direnv`
 
 ✅ Python:
