@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
     neovim tmux fzf ripgrep unzip \
     postgresql-client openssh-client make \
     direnv nodejs npm catimg \
+    software-properties-common \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ---------------------------
@@ -40,44 +41,98 @@ USER $USERNAME
 WORKDIR /home/$USERNAME
 
 # ---------------------------
-# Configuração do ambiente
-# ---------------------------
-
-# Instala oh-my-zsh
-RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-
-# Configura ambiente pyenv
-ENV PYENV_ROOT="/home/$USERNAME/.pyenv"
-ENV PATH="$PYENV_ROOT/bin:$PATH"
-
-# ---------------------------
 # Instalação de ferramentas
 # ---------------------------
 
-# Instala ferramentas do usuário
+# Instalar oh-my-zsh
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
+# Instalar pyenv, Rust e outras ferramentas
 RUN curl https://pyenv.run | bash \
   && curl https://sh.rustup.rs -sSf | sh -s -- -y
 
-# Instala nvm, node, yarn e typescript
+# Instala o NVM e o Node.js LTS
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
   export NVM_DIR="$HOME/.nvm" && \
   [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && \
   nvm install --lts && npm install -g yarn typescript
 
-# Instala poetry + adiciona ao zsh
-RUN curl -sSL https://install.python-poetry.org | python3 - && \
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/$USERNAME/.zshrc
-ENV PATH="/home/$USERNAME/.local/bin:$PATH"
+# Instala o Poetry
+RUN curl -sSL https://install.python-poetry.org | python3 -
 
+# Instala pyright
 RUN pip install --no-cache-dir pyright
+
+# ---------------------------
+# Carregando Ambiente das Ferramentas
+# ---------------------------
+
+# Zshrc
+RUN echo '# Zshrc Default' >> /home/$USERNAME/.zshrc && \
+    echo 'export ZSH="$HOME/.oh-my-zsh"' >> /home/$USERNAME/.zshrc && \
+    echo 'export ZSH_THEME="spaceship"' >> /home/$USERNAME/.zshrc && \
+    echo 'plugins=(git zsh-autosuggestions zsh-syntax-highlighting z)' >> /home/$USERNAME/.zshrc && \
+    echo 'export ZSH_CUSTOM="$HOME/.oh-my-zsh/custom"' >> /home/$USERNAME/.zshrc && \
+    echo 'export MANPATH="/usr/local/man:$MANPATH"' >> /home/$USERNAME/.zshrc && \
+    echo 'alias zshconfig="mate ~/.zshrc"' >> /home/$USERNAME/.zshrc && \
+    echo 'alias ohmyzsh="mate ~/.oh-my-zsh"' >> /home/$USERNAME/.zshrc && \
+    echo 'source $ZSH/oh-my-zsh.sh' >> /home/$USERNAME/.zshrc
+
+ENV ZSH_CUSTOM=/home/$USERNAME/.oh-my-zsh/custom
+
+# Pyenv
+RUN echo '# Pyenv' >> /home/$USERNAME/.zshrc && \
+    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> /home/$USERNAME/.zshrc && \
+    echo 'command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"' >> /home/$USERNAME/.zshrc && \
+    echo 'eval "$(pyenv init -)"' >> /home/$USERNAME/.zshrc && \
+    echo 'eval "$(pyenv virtualenv-init -)"' >> /home/$USERNAME/.zshrc
+
+# NVM
+RUN echo '# Nvm' >> /home/$USERNAME/.zshrc && \
+    echo 'export NVM_DIR="$HOME/.nvm"' >> /home/$USERNAME/.zshrc && \
+    echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /home/$USERNAME/.zshrc && \
+    echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"' >> /home/$USERNAME/.zshrc
+
+# Nvim
+RUN echo '# Nvim' >> /home/$USERNAME/.zshrc && \
+    echo 'export PATH="$PATH:/opt/nvim/bin"' >> /home/$USERNAME/.zshrc
+
+# Direnv
+RUN echo '# Direnv' >> /home/$USERNAME/.zshrc && \
+    echo 'eval "$(direnv hook zsh)"' >> /home/$USERNAME/.zshrc
+
+# Rust
+RUN echo '# Rust' >> /home/$USERNAME/.zshrc && \
+    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> /home/$USERNAME/.zshrc
+
+# Yarn
+RUN echo '# Yarn' >> /home/$USERNAME/.zshrc && \
+    echo 'export PATH="$HOME/.yarn/bin:$PATH"' >> /home/$USERNAME/.zshrc
+
 
 # ---------------------------
 # Setup do Neovim
 # ---------------------------
 
+USER root
+RUN add-apt-repository ppa:neovim-ppa/unstable && \
+  apt-get update && \
+  apt-get install -y neovim && \
+  apt autoremove -y
+
+USER $USERNAME
 RUN git clone https://github.com/PheFreire/NeoDuckEditor.git /home/$USERNAME/.config/nvim && \
   chmod +x /home/$USERNAME/.config/nvim/setup.sh && \
   /home/$USERNAME/.config/nvim/setup.sh
+
+# ---------------------------
+# Setup do Zsh Customs
+# ---------------------------
+
+RUN git clone https://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh-autosuggestions && \
+  git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $ZSH_CUSTOM/plugins/zsh-syntax-highlighting && \
+  git clone https://github.com/denysdovhan/spaceship-prompt.git $ZSH_CUSTOM/themes/spaceship-prompt && \
+  ln -s $ZSH_CUSTOM/themes/spaceship-prompt/spaceship.zsh-theme $ZSH_CUSTOM/themes/spaceship.zsh-theme
 
 # ---------------------------
 # Entrypoint
