@@ -63,6 +63,11 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 # Instala pyright
 RUN pip install --no-cache-dir pyright
 
+# Instala aws-cli
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+  unzip awscliv2.zip && \
+  sudo ./aws/install
+
 # ---------------------------
 # Carregando Ambiente das Ferramentas
 # ---------------------------
@@ -138,6 +143,7 @@ RUN git clone https://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugi
 # Setup do Poetry
 # ---------------------------
 
+ENV PATH="/home/$USERNAME/.local/bin:$PATH"
 RUN poetry self add poetry-plugin-shell
 
 # ---------------------------
